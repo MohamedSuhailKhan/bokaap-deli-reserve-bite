@@ -1,5 +1,6 @@
 
 import { Card, CardContent } from "@/components/ui/card";
+import Image from "next/image";
 
 interface MenuItem {
   id: number;
@@ -7,64 +8,109 @@ interface MenuItem {
   description: string;
   price: number;
   category: "starters" | "mains" | "desserts" | "drinks";
+  image: string;
+  isSpicy?: boolean;
 }
 
 const menuItems: MenuItem[] = [
   {
     id: 1,
-    name: "Caprese Salad",
-    description: "Fresh mozzarella, tomatoes, and basil with balsamic glaze",
-    price: 12.99,
-    category: "starters"
+    name: "Moroccan Lentil Soup",
+    description: "Traditional harira soup with lentils, chickpeas, and aromatic spices",
+    price: 89.99,
+    category: "starters",
+    image: "/photo-1498936178812-4b2e558d2937",
   },
   {
     id: 2,
-    name: "Bruschetta",
-    description: "Grilled bread rubbed with garlic and topped with tomatoes and olive oil",
-    price: 9.99,
-    category: "starters"
+    name: "Falafel Platter",
+    description: "Crispy chickpea falafels served with hummus and tahini sauce",
+    price: 79.99,
+    category: "starters",
+    image: "/photo-1618160702438-9b02ab6515c9",
   },
   {
     id: 3,
-    name: "Grilled Salmon",
-    description: "Atlantic salmon with lemon butter sauce and seasonal vegetables",
-    price: 28.99,
-    category: "mains"
+    name: "Grilled Lamb Kebabs",
+    description: "Tender lamb kebabs marinated in Middle Eastern spices",
+    price: 189.99,
+    category: "mains",
+    image: "/photo-1466721591366-2d5fba72006d",
+    isSpicy: true
   },
   {
     id: 4,
-    name: "Beef Tenderloin",
-    description: "8oz beef tenderloin with red wine reduction and roasted potatoes",
-    price: 34.99,
-    category: "mains"
+    name: "Butter Chicken",
+    description: "Tender chicken in a rich, creamy tomato sauce with aromatic spices",
+    price: 159.99,
+    category: "mains",
+    image: "/placeholder.svg",
+    isSpicy: true
   },
   {
     id: 5,
-    name: "Tiramisu",
-    description: "Classic Italian dessert with coffee-soaked ladyfingers and mascarpone cream",
-    price: 8.99,
-    category: "desserts"
+    name: "Biryani",
+    description: "Fragrant basmati rice cooked with tender meat and aromatic spices",
+    price: 169.99,
+    category: "mains",
+    image: "/placeholder.svg",
+    isSpicy: true
   },
   {
     id: 6,
-    name: "Crème Brûlée",
-    description: "Rich vanilla custard with caramelized sugar top",
-    price: 9.99,
-    category: "desserts"
+    name: "Grilled Sea Bass",
+    description: "Fresh sea bass grilled with herbs and lemon",
+    price: 199.99,
+    category: "mains",
+    image: "/placeholder.svg"
   },
   {
     id: 7,
-    name: "House Red Wine",
-    description: "Glass of our premium house red wine",
-    price: 8.99,
-    category: "drinks"
+    name: "Kunafa",
+    description: "Traditional Middle Eastern dessert with sweet cheese and crispy pastry",
+    price: 69.99,
+    category: "desserts",
+    image: "/placeholder.svg"
   },
   {
     id: 8,
-    name: "Craft Beer",
-    description: "Selection of local craft beers",
-    price: 6.99,
-    category: "drinks"
+    name: "Baklava",
+    description: "Layered phyllo pastry filled with nuts and honey",
+    price: 59.99,
+    category: "desserts",
+    image: "/placeholder.svg"
+  },
+  {
+    id: 9,
+    name: "Turkish Coffee",
+    description: "Traditional Turkish coffee with cardamom",
+    price: 39.99,
+    category: "drinks",
+    image: "/placeholder.svg"
+  },
+  {
+    id: 10,
+    name: "Mint Tea",
+    description: "Fresh mint tea served Moroccan style",
+    price: 29.99,
+    category: "drinks",
+    image: "/placeholder.svg"
+  },
+  {
+    id: 11,
+    name: "Fresh Juice Selection",
+    description: "Choose from orange, pomegranate, or mango",
+    price: 44.99,
+    category: "drinks",
+    image: "/placeholder.svg"
+  },
+  {
+    id: 12,
+    name: "Shawarma Plate",
+    description: "Grilled marinated chicken or lamb with rice and salad",
+    price: 149.99,
+    category: "mains",
+    image: "/placeholder.svg"
   }
 ];
 
@@ -73,7 +119,12 @@ const Menu = () => {
 
   return (
     <div className="container mx-auto px-4 py-20">
-      <h1 className="text-4xl font-bold text-center mb-12">Our Menu</h1>
+      <h1 className="text-4xl font-bold text-center mb-12">Our Halaal Menu</h1>
+      
+      <div className="text-center mb-8">
+        <p className="text-lg text-gray-600">All our food is certified Halaal</p>
+        <p className="text-sm text-gray-500">🌶️ Indicates spicy dishes</p>
+      </div>
       
       <div className="space-y-12">
         {categories.map((category) => (
@@ -83,14 +134,24 @@ const Menu = () => {
               {menuItems
                 .filter((item) => item.category === category)
                 .map((item) => (
-                  <Card key={item.id} className="hover:shadow-lg transition-shadow">
+                  <Card key={item.id} className="hover:shadow-lg transition-shadow overflow-hidden">
+                    <div className="relative h-48 w-full">
+                      <img
+                        src={item.image}
+                        alt={item.name}
+                        className="object-cover w-full h-full"
+                      />
+                    </div>
                     <CardContent className="p-6">
                       <div className="flex justify-between items-start">
                         <div>
-                          <h3 className="text-xl font-semibold">{item.name}</h3>
+                          <h3 className="text-xl font-semibold flex items-center gap-2">
+                            {item.name}
+                            {item.isSpicy && <span title="Spicy">🌶️</span>}
+                          </h3>
                           <p className="text-gray-600 mt-2">{item.description}</p>
                         </div>
-                        <span className="text-lg font-medium">${item.price.toFixed(2)}</span>
+                        <span className="text-lg font-medium">R{item.price.toFixed(2)}</span>
                       </div>
                     </CardContent>
                   </Card>
@@ -98,6 +159,12 @@ const Menu = () => {
             </div>
           </div>
         ))}
+      </div>
+
+      <div className="mt-12 text-center">
+        <p className="text-sm text-gray-500">
+          All prices include VAT. Menu items and prices are subject to change.
+        </p>
       </div>
     </div>
   );
