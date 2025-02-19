@@ -52,8 +52,12 @@ const Reservations = () => {
       return;
     }
 
-    // Here you would typically send this to your backend
-    const reservation = {
+    // Get existing reservations
+    const existingReservations = JSON.parse(localStorage.getItem('reservations') || '[]');
+    
+    // Create new reservation
+    const newReservation = {
+      id: Date.now(), // Use timestamp as ID
       date,
       time,
       guests,
@@ -61,13 +65,15 @@ const Reservations = () => {
       email,
       phone,
       tableId: selectedTable,
+      status: "pending"
     };
 
-    console.log("Reservation details:", reservation);
+    // Save to localStorage
+    localStorage.setItem('reservations', JSON.stringify([...existingReservations, newReservation]));
 
     toast({
       title: "Reservation Submitted!",
-      description: "We'll send you a confirmation email shortly.",
+      description: "Your reservation has been received. Check your email for confirmation.",
     });
 
     // Reset form
