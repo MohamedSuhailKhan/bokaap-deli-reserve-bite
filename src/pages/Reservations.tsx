@@ -1,10 +1,10 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
-import { Card } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Select,
   SelectContent,
@@ -30,6 +30,73 @@ const tables = [
   { id: 6, seats: 8, location: "Private Room" },
 ];
 
+interface MenuItem {
+  id: number;
+  name: string;
+  description: string;
+  price: number;
+  category: "starters" | "mains" | "desserts" | "drinks";
+}
+
+const menuItems: MenuItem[] = [
+  {
+    id: 1,
+    name: "Caprese Salad",
+    description: "Fresh mozzarella, tomatoes, and basil with balsamic glaze",
+    price: 12.99,
+    category: "starters"
+  },
+  {
+    id: 2,
+    name: "Bruschetta",
+    description: "Grilled bread rubbed with garlic and topped with tomatoes and olive oil",
+    price: 9.99,
+    category: "starters"
+  },
+  {
+    id: 3,
+    name: "Grilled Salmon",
+    description: "Atlantic salmon with lemon butter sauce and seasonal vegetables",
+    price: 28.99,
+    category: "mains"
+  },
+  {
+    id: 4,
+    name: "Beef Tenderloin",
+    description: "8oz beef tenderloin with red wine reduction and roasted potatoes",
+    price: 34.99,
+    category: "mains"
+  },
+  {
+    id: 5,
+    name: "Tiramisu",
+    description: "Classic Italian dessert with coffee-soaked ladyfingers and mascarpone cream",
+    price: 8.99,
+    category: "desserts"
+  },
+  {
+    id: 6,
+    name: "Crème Brûlée",
+    description: "Rich vanilla custard with caramelized sugar top",
+    price: 9.99,
+    category: "desserts"
+  },
+  {
+    id: 7,
+    name: "House Red Wine",
+    description: "Glass of our premium house red wine",
+    price: 8.99,
+    category: "drinks"
+  },
+  {
+    id: 8,
+    name: "Craft Beer",
+    description: "Selection of local craft beers",
+    price: 6.99,
+    category: "drinks"
+  }
+];
+
 const Reservations = () => {
   const { toast } = useToast();
   const [date, setDate] = useState<Date | undefined>(undefined);
@@ -39,6 +106,15 @@ const Reservations = () => {
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [selectedTable, setSelectedTable] = useState<number | null>(null);
+  const [selectedItems, setSelectedItems] = useState<number[]>([]);
+
+  const handleItemToggle = (itemId: number) => {
+    setSelectedItems(current =>
+      current.includes(itemId)
+        ? current.filter(id => id !== itemId)
+        : [...current, itemId]
+    );
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -52,12 +128,21 @@ const Reservations = () => {
       return;
     }
 
+    const selectedMenuItems = menuItems.filter(item => 
+      selectedItems.includes(item.id)
+    );
+
+    const totalAmount = selectedMenuItems.reduce(
+      (sum, item) => sum + item.price,
+      0
+    );
+
     // Get existing reservations
     const existingReservations = JSON.parse(localStorage.getItem('reservations') || '[]');
     
     // Create new reservation
     const newReservation = {
-      id: Date.now(), // Use timestamp as ID
+      id: Date.now(),
       date,
       time,
       guests,
@@ -65,7 +150,9 @@ const Reservations = () => {
       email,
       phone,
       tableId: selectedTable,
-      status: "pending"
+      status: "pending",
+      menuItems: selectedMenuItems,
+      totalAmount
     };
 
     // Save to localStorage
@@ -84,6 +171,7 @@ const Reservations = () => {
     setEmail("");
     setPhone("");
     setSelectedTable(null);
+    setSelectedItems([]);
   };
 
   return (
@@ -194,6 +282,39 @@ const Reservations = () => {
                     </div>
                   </div>
                 </Button>
+              ))}
+            </div>
+          </Card>
+
+          <Card className="p-6">
+            <h2 className="text-xl font-semibold mb-4">Pre-order Menu Items</h2>
+            <div className="space-y-6">
+              {["starters", "mains", "desserts", "drinks"].map((category) => (
+                <div key={category}>
+                  <h3 className="text-lg font-medium capitalize mb-3">{category}</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {menuItems
+                      .filter((item) => item.category === category)
+                      .map((item) => (
+                        <div key={item.id} className="flex items-start space-x-3">
+                          <Checkbox
+                            id={`item-${item.id}`}
+                            checked={selectedItems.includes(item.id)}
+                            onCheckedChange={() => handleItemToggle(item.id)}
+                          />
+                          <div className="flex-1">
+                            <label
+                              htmlFor={`item-${item.id}`}
+                              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                            >
+                              {item.name} - ${item.price.toFixed(2)}
+                            </label>
+                            <p className="text-sm text-gray-500">{item.description}</p>
+                          </div>
+                        </div>
+                      ))}
+                  </div>
+                </div>
               ))}
             </div>
           </Card>

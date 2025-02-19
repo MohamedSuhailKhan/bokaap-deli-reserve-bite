@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -21,7 +20,6 @@ import { format } from "date-fns";
 import { CheckCircle, XCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
-// Get initial reservations from localStorage or use empty array
 const getInitialReservations = () => {
   const saved = localStorage.getItem('reservations');
   return saved ? JSON.parse(saved) : [];
@@ -33,7 +31,6 @@ const Admin = () => {
   const [selectedReservation, setSelectedReservation] = useState<any>(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
 
-  // Update localStorage when reservations change
   useEffect(() => {
     localStorage.setItem('reservations', JSON.stringify(reservations));
   }, [reservations]);
@@ -172,6 +169,25 @@ const Admin = () => {
                 <p>Table: {selectedReservation.tableId}</p>
                 <p>Status: {selectedReservation.status || 'pending'}</p>
               </div>
+              {selectedReservation.menuItems && selectedReservation.menuItems.length > 0 && (
+                <div>
+                  <h4 className="font-semibold">Ordered Items</h4>
+                  <div className="space-y-2">
+                    {selectedReservation.menuItems.map((item: any) => (
+                      <div key={item.id} className="flex justify-between">
+                        <span>{item.name}</span>
+                        <span>${item.price.toFixed(2)}</span>
+                      </div>
+                    ))}
+                    <div className="border-t pt-2 mt-2">
+                      <div className="flex justify-between font-semibold">
+                        <span>Total Amount:</span>
+                        <span>${selectedReservation.totalAmount.toFixed(2)}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </DialogContent>
         )}
