@@ -1,121 +1,49 @@
 
+import { useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import Image from "next/image";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 interface MenuItem {
-  id: number;
+  id: string;
   name: string;
   description: string;
   price: number;
   category: "starters" | "mains" | "desserts" | "drinks";
-  image: string;
-  isSpicy?: boolean;
+  image_url?: string;
+  is_spicy: boolean;
 }
 
-const menuItems: MenuItem[] = [
-  {
-    id: 1,
-    name: "Moroccan Lentil Soup",
-    description: "Traditional harira soup with lentils, chickpeas, and aromatic spices",
-    price: 89.99,
-    category: "starters",
-    image: "/photo-1498936178812-4b2e558d2937",
-  },
-  {
-    id: 2,
-    name: "Falafel Platter",
-    description: "Crispy chickpea falafels served with hummus and tahini sauce",
-    price: 79.99,
-    category: "starters",
-    image: "/photo-1618160702438-9b02ab6515c9",
-  },
-  {
-    id: 3,
-    name: "Grilled Lamb Kebabs",
-    description: "Tender lamb kebabs marinated in Middle Eastern spices",
-    price: 189.99,
-    category: "mains",
-    image: "/photo-1466721591366-2d5fba72006d",
-    isSpicy: true
-  },
-  {
-    id: 4,
-    name: "Butter Chicken",
-    description: "Tender chicken in a rich, creamy tomato sauce with aromatic spices",
-    price: 159.99,
-    category: "mains",
-    image: "/placeholder.svg",
-    isSpicy: true
-  },
-  {
-    id: 5,
-    name: "Biryani",
-    description: "Fragrant basmati rice cooked with tender meat and aromatic spices",
-    price: 169.99,
-    category: "mains",
-    image: "/placeholder.svg",
-    isSpicy: true
-  },
-  {
-    id: 6,
-    name: "Grilled Sea Bass",
-    description: "Fresh sea bass grilled with herbs and lemon",
-    price: 199.99,
-    category: "mains",
-    image: "/placeholder.svg"
-  },
-  {
-    id: 7,
-    name: "Kunafa",
-    description: "Traditional Middle Eastern dessert with sweet cheese and crispy pastry",
-    price: 69.99,
-    category: "desserts",
-    image: "/placeholder.svg"
-  },
-  {
-    id: 8,
-    name: "Baklava",
-    description: "Layered phyllo pastry filled with nuts and honey",
-    price: 59.99,
-    category: "desserts",
-    image: "/placeholder.svg"
-  },
-  {
-    id: 9,
-    name: "Turkish Coffee",
-    description: "Traditional Turkish coffee with cardamom",
-    price: 39.99,
-    category: "drinks",
-    image: "/placeholder.svg"
-  },
-  {
-    id: 10,
-    name: "Mint Tea",
-    description: "Fresh mint tea served Moroccan style",
-    price: 29.99,
-    category: "drinks",
-    image: "/placeholder.svg"
-  },
-  {
-    id: 11,
-    name: "Fresh Juice Selection",
-    description: "Choose from orange, pomegranate, or mango",
-    price: 44.99,
-    category: "drinks",
-    image: "/placeholder.svg"
-  },
-  {
-    id: 12,
-    name: "Shawarma Plate",
-    description: "Grilled marinated chicken or lamb with rice and salad",
-    price: 149.99,
-    category: "mains",
-    image: "/placeholder.svg"
-  }
-];
-
 const Menu = () => {
+  const { toast } = useToast();
+  const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const categories = ["starters", "mains", "desserts", "drinks"];
+
+  useEffect(() => {
+    const fetchMenuItems = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('menu_items')
+          .select('*')
+          .order('category');
+
+        if (error) {
+          throw error;
+        }
+
+        setMenuItems(data || []);
+      } catch (error) {
+        console.error('Error fetching menu items:', error);
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Could not load menu items. Please try again later.",
+        });
+      }
+    };
+
+    fetchMenuItems();
+  }, [toast]);
 
   return (
     <div className="container mx-auto px-4 py-20">
@@ -135,19 +63,21 @@ const Menu = () => {
                 .filter((item) => item.category === category)
                 .map((item) => (
                   <Card key={item.id} className="hover:shadow-lg transition-shadow overflow-hidden">
-                    <div className="relative h-48 w-full">
-                      <img
-                        src={item.image}
-                        alt={item.name}
-                        className="object-cover w-full h-full"
-                      />
-                    </div>
+                    {item.image_url && (
+                      <div className="relative h-48 w-full">
+                        <img
+                          src={item.image_url || '/placeholder.svg'}
+                          alt={item.name}
+                          className="object-cover w-full h-full"
+                        />
+                      </div>
+                    )}
                     <CardContent className="p-6">
                       <div className="flex justify-between items-start">
                         <div>
                           <h3 className="text-xl font-semibold flex items-center gap-2">
                             {item.name}
-                            {item.isSpicy && <span title="Spicy">🌶️</span>}
+                            {item.is_spicy && <span title="Spicy">🌶️</span>}
                           </h3>
                           <p className="text-gray-600 mt-2">{item.description}</p>
                         </div>
