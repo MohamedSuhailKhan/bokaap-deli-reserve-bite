@@ -32,7 +32,13 @@ const Menu = () => {
           throw error;
         }
 
-        setMenuItems(data || []);
+        // Type assertion to ensure the data matches our MenuItem type
+        const typedData = (data || []).map(item => ({
+          ...item,
+          category: item.category as "starters" | "mains" | "desserts" | "drinks"
+        }));
+
+        setMenuItems(typedData);
       } catch (error) {
         console.error('Error fetching menu items:', error);
         toast({
