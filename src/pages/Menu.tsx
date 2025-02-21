@@ -7,17 +7,18 @@ import { useToast } from "@/hooks/use-toast";
 interface MenuItem {
   id: string;
   name: string;
-  description: string;
+  description: string | null;
   price: number;
   category: "starters" | "mains" | "desserts" | "drinks";
-  image_url?: string;
+  image_url: string | null;
   is_spicy: boolean;
+  created_at: string | null;
 }
 
 const Menu = () => {
   const { toast } = useToast();
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
-  const categories = ["starters", "mains", "desserts", "drinks"];
+  const categories = ["starters", "mains", "desserts", "drinks"] as const;
 
   useEffect(() => {
     const fetchMenuItems = async () => {

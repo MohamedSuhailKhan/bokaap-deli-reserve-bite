@@ -9,18 +9,123 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      "Bokaap-Deli": {
+      menu_items: {
         Row: {
-          created_at: string
-          id: number
+          category: string
+          created_at: string | null
+          description: string | null
+          id: string
+          image_url: string | null
+          is_spicy: boolean | null
+          name: string
+          price: number
         }
         Insert: {
-          created_at?: string
-          id?: number
+          category: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          is_spicy?: boolean | null
+          name: string
+          price: number
         }
         Update: {
-          created_at?: string
-          id?: number
+          category?: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          is_spicy?: boolean | null
+          name?: string
+          price?: number
+        }
+        Relationships: []
+      }
+      reservation_items: {
+        Row: {
+          created_at: string | null
+          id: string
+          menu_item_id: string | null
+          quantity: number
+          reservation_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          menu_item_id?: string | null
+          quantity?: number
+          reservation_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          menu_item_id?: string | null
+          quantity?: number
+          reservation_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reservation_items_menu_item_id_fkey"
+            columns: ["menu_item_id"]
+            isOneToOne: false
+            referencedRelation: "menu_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reservation_items_reservation_id_fkey"
+            columns: ["reservation_id"]
+            isOneToOne: false
+            referencedRelation: "reservations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      reservations: {
+        Row: {
+          created_at: string | null
+          date: string
+          email: string
+          guests: number
+          id: string
+          name: string
+          payment_intent_id: string | null
+          payment_status: string | null
+          phone: string
+          status: string | null
+          table_number: number
+          time: string
+          total_amount: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          date: string
+          email: string
+          guests: number
+          id?: string
+          name: string
+          payment_intent_id?: string | null
+          payment_status?: string | null
+          phone: string
+          status?: string | null
+          table_number: number
+          time: string
+          total_amount?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          date?: string
+          email?: string
+          guests?: number
+          id?: string
+          name?: string
+          payment_intent_id?: string | null
+          payment_status?: string | null
+          phone?: string
+          status?: string | null
+          table_number?: number
+          time?: string
+          total_amount?: number | null
         }
         Relationships: []
       }
