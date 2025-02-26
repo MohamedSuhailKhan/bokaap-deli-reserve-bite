@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -50,7 +51,7 @@ const Admin = () => {
     localStorage.setItem('reservations', JSON.stringify(reservations));
   }, [reservations]);
 
-  const handleStatusChange = async (id: number, newStatus: string) => {
+  const handleStatusChange = async (id: string, newStatus: string) => {
     try {
       const { data: reservation, error: fetchError } = await supabase
         .from("reservations")
