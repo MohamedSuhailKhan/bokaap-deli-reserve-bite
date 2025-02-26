@@ -20,7 +20,7 @@ import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { CheckCircle, XCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/lib/supabase";
+import { supabase } from "@/integrations/supabase/client";
 
 const getInitialReservations = () => {
   const saved = localStorage.getItem('reservations');
