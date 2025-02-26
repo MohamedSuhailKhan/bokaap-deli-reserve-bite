@@ -1,17 +1,39 @@
 
-import { Link, useLocation } from "react-router-dom";
-import { Menu, ShoppingCart, User } from "lucide-react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Menu, LogOut, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useToast } from "@/hooks/use-toast";
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
+  const { toast } = useToast();
+
+  useEffect(() => {
+    const adminStatus = localStorage.getItem('isAdmin') === 'true';
+    setIsAdmin(adminStatus);
+  }, [location]);
 
   const navLinks = [
     { name: "Menu", path: "/menu" },
     { name: "Reservations", path: "/reservations" },
   ];
+
+  const handleLogout = () => {
+    localStorage.removeItem('isAdmin');
+    localStorage.removeItem('adminUsername');
+    setIsAdmin(false);
+    toast({
+      title: "Logged out successfully",
+      description: "You have been logged out of your admin account.",
+    });
+    if (location.pathname === '/admin') {
+      navigate('/');
+    }
+  };
 
   const isActive = (path: string) => location.pathname === path;
 
@@ -39,12 +61,23 @@ const Navbar = () => {
           </div>
 
           <div className="hidden md:flex items-center space-x-4">
-            <Button variant="ghost" size="icon">
-              <ShoppingCart className="h-5 w-5" />
-            </Button>
-            <Button variant="ghost" size="icon">
-              <User className="h-5 w-5" />
-            </Button>
+            {isAdmin ? (
+              <>
+                <Button variant="ghost" asChild>
+                  <Link to="/admin">Admin Dashboard</Link>
+                </Button>
+                <Button variant="ghost" size="icon" onClick={handleLogout}>
+                  <LogOut className="h-5 w-5" />
+                </Button>
+              </>
+            ) : (
+              <Button variant="ghost" asChild>
+                <Link to="/auth">
+                  <User className="h-5 w-5 mr-2" />
+                  Admin Login
+                </Link>
+              </Button>
+            )}
           </div>
 
           {/* Mobile Menu Button */}
@@ -73,6 +106,35 @@ const Navbar = () => {
                 {link.name}
               </Link>
             ))}
+            {isAdmin ? (
+              <>
+                <Link
+                  to="/admin"
+                  className="block py-2 transition-colors hover:text-primary"
+                  onClick={() => setIsOpen(false)}
+                >
+                  Admin Dashboard
+                </Link>
+                <Button
+                  variant="ghost"
+                  className="w-full text-left"
+                  onClick={() => {
+                    handleLogout();
+                    setIsOpen(false);
+                  }}
+                >
+                  Logout
+                </Button>
+              </>
+            ) : (
+              <Link
+                to="/auth"
+                className="block py-2 transition-colors hover:text-primary"
+                onClick={() => setIsOpen(false)}
+              >
+                Admin Login
+              </Link>
+            )}
           </div>
         )}
       </div>

@@ -1,4 +1,6 @@
+
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -26,10 +28,23 @@ const getInitialReservations = () => {
 };
 
 const Admin = () => {
+  const navigate = useNavigate();
   const { toast } = useToast();
   const [reservations, setReservations] = useState(getInitialReservations);
   const [selectedReservation, setSelectedReservation] = useState<any>(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+
+  useEffect(() => {
+    const isAdmin = localStorage.getItem('isAdmin') === 'true';
+    if (!isAdmin) {
+      toast({
+        variant: "destructive",
+        title: "Unauthorized",
+        description: "Please login as an admin to access this page.",
+      });
+      navigate('/auth');
+    }
+  }, [navigate, toast]);
 
   useEffect(() => {
     localStorage.setItem('reservations', JSON.stringify(reservations));
@@ -171,18 +186,18 @@ const Admin = () => {
               </div>
               {selectedReservation.menuItems && selectedReservation.menuItems.length > 0 && (
                 <div>
-                  <h4 className="font-semibold">Ordered Items</h4>
+                  <h4 className="font-semibold">Pre-ordered Items</h4>
                   <div className="space-y-2">
                     {selectedReservation.menuItems.map((item: any) => (
                       <div key={item.id} className="flex justify-between">
                         <span>{item.name}</span>
-                        <span>${item.price.toFixed(2)}</span>
+                        <span>R{item.price.toFixed(2)}</span>
                       </div>
                     ))}
                     <div className="border-t pt-2 mt-2">
                       <div className="flex justify-between font-semibold">
                         <span>Total Amount:</span>
-                        <span>${selectedReservation.totalAmount.toFixed(2)}</span>
+                        <span>R{selectedReservation.totalAmount.toFixed(2)}</span>
                       </div>
                     </div>
                   </div>

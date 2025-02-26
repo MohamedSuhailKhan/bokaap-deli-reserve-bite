@@ -9,6 +9,7 @@ import Home from "./pages/Home";
 import Menu from "./pages/Menu";
 import Reservations from "./pages/Reservations";
 import Admin from "./pages/Admin";
+import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -25,6 +26,7 @@ const App = () => (
             <Route path="menu" element={<Menu />} />
             <Route path="reservations" element={<Reservations />} />
             <Route path="admin" element={<Admin />} />
+            <Route path="auth" element={<Auth />} />
             <Route path="*" element={<NotFound />} />
           </Route>
         </Routes>
