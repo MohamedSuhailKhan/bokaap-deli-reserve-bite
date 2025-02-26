@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -26,9 +25,6 @@ const Home = () => {
             <div className="space-x-4">
               <Button asChild size="lg">
                 <Link to="/reservations">Make a Reservation</Link>
-              </Button>
-              <Button asChild variant="outline" size="lg">
-                <Link to="/order">Order Online</Link>
               </Button>
             </div>
           </div>

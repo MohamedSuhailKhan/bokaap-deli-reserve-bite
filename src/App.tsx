@@ -8,7 +8,6 @@ import Layout from "./components/Layout";
 import Home from "./pages/Home";
 import Menu from "./pages/Menu";
 import Reservations from "./pages/Reservations";
-import Order from "./pages/Order";
 import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
 
@@ -25,7 +24,6 @@ const App = () => (
             <Route index element={<Home />} />
             <Route path="menu" element={<Menu />} />
             <Route path="reservations" element={<Reservations />} />
-            <Route path="order" element={<Order />} />
             <Route path="admin" element={<Admin />} />
             <Route path="*" element={<NotFound />} />
           </Route>
