@@ -8,6 +8,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
+type AdminUser = {
+  id: string;
+  username: string;
+  password_hash: string;
+  created_at: string | null;
+};
+
 const Auth = () => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -20,17 +27,15 @@ const Auth = () => {
     setIsLoading(true);
 
     try {
-      // Query admin_users table to check credentials
       const { data, error } = await supabase
-        .from('admin_users')
-        .select('*')
-        .eq('username', username)
-        .single();
+        .from("admin_users")
+        .select()
+        .eq("username", username)
+        .maybeSingle<AdminUser>();
 
       if (error) throw error;
 
-      if (data && password === 'admin123') { // In a real app, you'd use proper password hashing
-        // Store admin status in localStorage
+      if (data && data.password_hash === password) {
         localStorage.setItem('isAdmin', 'true');
         localStorage.setItem('adminUsername', username);
         
@@ -53,6 +58,7 @@ const Auth = () => {
         title: "Error",
         description: "An error occurred during login.",
       });
+      console.error(error);
     } finally {
       setIsLoading(false);
     }
