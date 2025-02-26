@@ -71,12 +71,13 @@ const Reservations = () => {
         .select()
         .single();
 
-      if (reservationError) throw reservationError;
+      if (reservationError) {
+        throw reservationError;
+      }
 
-      // Send confirmation email
-      const { error: emailError } = await supabase.functions.invoke(
-        "send-reservation-email",
-        {
+      try {
+        // Try to send email, but don't block the reservation if it fails
+        await supabase.functions.invoke("send-reservation-email", {
           body: {
             type: "new",
             reservation: {
@@ -88,14 +89,15 @@ const Reservations = () => {
               table_number: tableNumber,
             },
           },
-        }
-      );
-
-      if (emailError) throw emailError;
+        });
+      } catch (emailError) {
+        console.error("Email sending failed:", emailError);
+        // Don't throw here, just log the error
+      }
 
       toast({
         title: "Reservation Submitted",
-        description: "We'll send you a confirmation email shortly.",
+        description: "Your reservation has been successfully submitted. We'll contact you shortly.",
       });
 
       // Reset form
