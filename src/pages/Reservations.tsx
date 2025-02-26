@@ -2,10 +2,8 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
-import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
   Select,
   SelectContent,
@@ -14,113 +12,36 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
-// Available time slots
-const timeSlots = [
-  "17:00", "17:30", "18:00", "18:30", "19:00", 
-  "19:30", "20:00", "20:30", "21:00"
+const availableTimes = [
+  "17:00",
+  "17:30",
+  "18:00",
+  "18:30",
+  "19:00",
+  "19:30",
+  "20:00",
+  "20:30",
+  "21:00",
 ];
 
-// Table configurations
-const tables = [
-  { id: 1, seats: 2, location: "Window" },
-  { id: 2, seats: 2, location: "Window" },
-  { id: 3, seats: 4, location: "Interior" },
-  { id: 4, seats: 4, location: "Interior" },
-  { id: 5, seats: 6, location: "Garden" },
-  { id: 6, seats: 8, location: "Private Room" },
-];
-
-interface MenuItem {
-  id: number;
-  name: string;
-  description: string;
-  price: number;
-  category: "starters" | "mains" | "desserts" | "drinks";
-}
-
-const menuItems: MenuItem[] = [
-  {
-    id: 1,
-    name: "Bobotie Spring Rolls",
-    description: "Traditional bobotie filling in crispy spring roll wrappers with peach chutney",
-    price: 89.99,
-    category: "starters"
-  },
-  {
-    id: 2,
-    name: "Samoosas",
-    description: "Handmade triangular pastries with spiced meat or vegetable filling",
-    price: 69.99,
-    category: "starters"
-  },
-  {
-    id: 3,
-    name: "Cape Malay Curry",
-    description: "Traditional aromatic curry served with basmati rice and sambals",
-    price: 189.99,
-    category: "mains"
-  },
-  {
-    id: 4,
-    name: "Denningvleis",
-    description: "Slow-cooked lamb with tamarind and spices",
-    price: 219.99,
-    category: "mains"
-  },
-  {
-    id: 5,
-    name: "Malva Pudding",
-    description: "Classic Cape Malay dessert with custard",
-    price: 79.99,
-    category: "desserts"
-  },
-  {
-    id: 6,
-    name: "Koesisters",
-    description: "Spiced doughnuts dipped in syrup and coconut",
-    price: 59.99,
-    category: "desserts"
-  },
-  {
-    id: 7,
-    name: "Rooibos Tea",
-    description: "Traditional South African herbal tea",
-    price: 29.99,
-    category: "drinks"
-  },
-  {
-    id: 8,
-    name: "Craft Beer",
-    description: "Selection of local craft beers",
-    price: 69.99,
-    category: "drinks"
-  }
-];
+const availableTables = [1, 2, 3, 4, 5, 6, 7, 8];
 
 const Reservations = () => {
-  const { toast } = useToast();
-  const [date, setDate] = useState<Date | undefined>(undefined);
-  const [time, setTime] = useState<string>("");
-  const [guests, setGuests] = useState<string>("2");
+  const [date, setDate] = useState<Date>();
+  const [time, setTime] = useState<string>();
+  const [guests, setGuests] = useState<number>(2);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
-  const [selectedTable, setSelectedTable] = useState<number | null>(null);
-  const [selectedItems, setSelectedItems] = useState<number[]>([]);
+  const [tableNumber, setTableNumber] = useState<number>();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { toast } = useToast();
 
-  const handleItemToggle = (itemId: number) => {
-    setSelectedItems(current =>
-      current.includes(itemId)
-        ? current.filter(id => id !== itemId)
-        : [...current, itemId]
-    );
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!date || !time || !selectedTable) {
+    if (!date || !time || !tableNumber) {
       toast({
         variant: "destructive",
         title: "Missing Information",
@@ -129,202 +50,165 @@ const Reservations = () => {
       return;
     }
 
-    const selectedMenuItems = menuItems.filter(item => 
-      selectedItems.includes(item.id)
-    );
+    setIsSubmitting(true);
 
-    const totalAmount = selectedMenuItems.reduce(
-      (sum, item) => sum + item.price,
-      0
-    );
+    try {
+      // Create the reservation
+      const { data: reservation, error: reservationError } = await supabase
+        .from("reservations")
+        .insert([
+          {
+            date: date.toISOString().split("T")[0],
+            time,
+            guests,
+            name,
+            email,
+            phone,
+            table_number: tableNumber,
+            status: "pending",
+          },
+        ])
+        .select()
+        .single();
 
-    // Get existing reservations
-    const existingReservations = JSON.parse(localStorage.getItem('reservations') || '[]');
-    
-    // Create new reservation
-    const newReservation = {
-      id: Date.now(),
-      date,
-      time,
-      guests,
-      name,
-      email,
-      phone,
-      tableId: selectedTable,
-      status: "pending",
-      menuItems: selectedMenuItems,
-      totalAmount
-    };
+      if (reservationError) throw reservationError;
 
-    // Save to localStorage
-    localStorage.setItem('reservations', JSON.stringify([...existingReservations, newReservation]));
+      // Send confirmation email
+      const { error: emailError } = await supabase.functions.invoke(
+        "send-reservation-email",
+        {
+          body: {
+            type: "new",
+            reservation: {
+              name,
+              email,
+              date: date.toISOString().split("T")[0],
+              time,
+              guests,
+              table_number: tableNumber,
+            },
+          },
+        }
+      );
 
-    toast({
-      title: "Reservation Submitted!",
-      description: "Your reservation has been received. Check your email for confirmation.",
-    });
+      if (emailError) throw emailError;
 
-    // Reset form
-    setDate(undefined);
-    setTime("");
-    setGuests("2");
-    setName("");
-    setEmail("");
-    setPhone("");
-    setSelectedTable(null);
-    setSelectedItems([]);
+      toast({
+        title: "Reservation Submitted",
+        description: "We'll send you a confirmation email shortly.",
+      });
+
+      // Reset form
+      setDate(undefined);
+      setTime(undefined);
+      setGuests(2);
+      setName("");
+      setEmail("");
+      setPhone("");
+      setTableNumber(undefined);
+    } catch (error) {
+      console.error("Error:", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to submit reservation. Please try again.",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
     <div className="container mx-auto px-4 py-20">
       <h1 className="text-4xl font-bold text-center mb-12">Make a Reservation</h1>
-      
-      <div className="max-w-4xl mx-auto">
-        <form onSubmit={handleSubmit} className="space-y-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <Card className="p-6">
-              <h2 className="text-xl font-semibold mb-4">Select Date & Time</h2>
-              <div className="space-y-4">
-                <Calendar
-                  mode="single"
-                  selected={date}
-                  onSelect={setDate}
-                  className="rounded-md border"
-                  disabled={(date) => date < new Date()}
-                />
-                
-                <div>
-                  <Label htmlFor="time">Preferred Time</Label>
-                  <Select value={time} onValueChange={setTime}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select time" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {timeSlots.map((slot) => (
-                        <SelectItem key={slot} value={slot}>
-                          {slot}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div>
-                  <Label htmlFor="guests">Number of Guests</Label>
-                  <Select value={guests} onValueChange={setGuests}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select number of guests" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {[1, 2, 3, 4, 5, 6, 7, 8].map((num) => (
-                        <SelectItem key={num} value={num.toString()}>
-                          {num} {num === 1 ? "Guest" : "Guests"}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-            </Card>
-
-            <Card className="p-6">
-              <h2 className="text-xl font-semibold mb-4">Contact Information</h2>
-              <div className="space-y-4">
-                <div>
-                  <Label htmlFor="name">Full Name</Label>
-                  <Input
-                    id="name"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    required
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="email">Email</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="phone">Phone Number</Label>
-                  <Input
-                    id="phone"
-                    type="tel"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    required
-                  />
-                </div>
-              </div>
-            </Card>
+      <div className="max-w-xl mx-auto">
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="space-y-4">
+            <Label>Select Date</Label>
+            <Calendar
+              mode="single"
+              selected={date}
+              onSelect={setDate}
+              disabled={(date) => date < new Date()}
+              className="rounded-md border"
+            />
           </div>
 
-          <Card className="p-6">
-            <h2 className="text-xl font-semibold mb-4">Select a Table</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-              {tables.map((table) => (
-                <Button
-                  key={table.id}
-                  variant={selectedTable === table.id ? "default" : "outline"}
-                  className="h-auto py-4"
-                  onClick={() => setSelectedTable(table.id)}
-                  type="button"
-                >
-                  <div className="text-left">
-                    <div className="font-semibold">Table {table.id}</div>
-                    <div className="text-sm text-gray-600">
-                      {table.seats} seats - {table.location}
-                    </div>
-                  </div>
-                </Button>
-              ))}
-            </div>
-          </Card>
-
-          <Card className="p-6">
-            <h2 className="text-xl font-semibold mb-4">Pre-order Menu Items</h2>
-            <div className="space-y-6">
-              {["starters", "mains", "desserts", "drinks"].map((category) => (
-                <div key={category}>
-                  <h3 className="text-lg font-medium capitalize mb-3">{category}</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {menuItems
-                      .filter((item) => item.category === category)
-                      .map((item) => (
-                        <div key={item.id} className="flex items-start space-x-3">
-                          <Checkbox
-                            id={`item-${item.id}`}
-                            checked={selectedItems.includes(item.id)}
-                            onCheckedChange={() => handleItemToggle(item.id)}
-                          />
-                          <div className="flex-1">
-                            <label
-                              htmlFor={`item-${item.id}`}
-                              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                            >
-                              {item.name} - R{item.price.toFixed(2)}
-                            </label>
-                            <p className="text-sm text-gray-500">{item.description}</p>
-                          </div>
-                        </div>
-                      ))}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </Card>
-
-          <div className="flex justify-center">
-            <Button type="submit" size="lg">
-              Confirm Reservation
-            </Button>
+          <div className="space-y-2">
+            <Label>Select Time</Label>
+            <Select onValueChange={(value) => setTime(value)}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select time" />
+              </SelectTrigger>
+              <SelectContent>
+                {availableTimes.map((t) => (
+                  <SelectItem key={t} value={t}>
+                    {t}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
+
+          <div className="space-y-2">
+            <Label>Select Table</Label>
+            <Select onValueChange={(value) => setTableNumber(Number(value))}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select table" />
+              </SelectTrigger>
+              <SelectContent>
+                {availableTables.map((table) => (
+                  <SelectItem key={table} value={table.toString()}>
+                    Table {table}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Number of Guests</Label>
+            <Input
+              type="number"
+              min={1}
+              max={8}
+              value={guests}
+              onChange={(e) => setGuests(Number(e.target.value))}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label>Name</Label>
+            <Input
+              required
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label>Email</Label>
+            <Input
+              required
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label>Phone</Label>
+            <Input
+              required
+              type="tel"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+            />
+          </div>
+
+          <Button type="submit" className="w-full" disabled={isSubmitting}>
+            {isSubmitting ? "Submitting..." : "Make Reservation"}
+          </Button>
         </form>
       </div>
     </div>

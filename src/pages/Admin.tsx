@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -21,6 +20,7 @@ import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { CheckCircle, XCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/lib/supabase";
 
 const getInitialReservations = () => {
   const saved = localStorage.getItem('reservations');
@@ -50,17 +50,60 @@ const Admin = () => {
     localStorage.setItem('reservations', JSON.stringify(reservations));
   }, [reservations]);
 
-  const handleStatusChange = (id: number, newStatus: string) => {
-    setReservations(
-      reservations.map((res: any) =>
-        res.id === id ? { ...res, status: newStatus } : res
-      )
-    );
+  const handleStatusChange = async (id: number, newStatus: string) => {
+    try {
+      const { data: reservation, error: fetchError } = await supabase
+        .from("reservations")
+        .select()
+        .eq("id", id)
+        .single();
 
-    toast({
-      title: "Status Updated",
-      description: `Reservation #${id} has been ${newStatus}.`,
-    });
+      if (fetchError) throw fetchError;
+
+      const { error: updateError } = await supabase
+        .from("reservations")
+        .update({ status: newStatus })
+        .eq("id", id);
+
+      if (updateError) throw updateError;
+
+      const { error: emailError } = await supabase.functions.invoke(
+        "send-reservation-email",
+        {
+          body: {
+            type: newStatus === "confirmed" ? "confirmed" : "cancelled",
+            reservation: {
+              name: reservation.name,
+              email: reservation.email,
+              date: reservation.date,
+              time: reservation.time,
+              guests: reservation.guests,
+              table_number: reservation.table_number,
+            },
+          },
+        }
+      );
+
+      if (emailError) throw emailError;
+
+      setReservations(
+        reservations.map((res: any) =>
+          res.id === id ? { ...res, status: newStatus } : res
+        )
+      );
+
+      toast({
+        title: "Status Updated",
+        description: `Reservation #${id} has been ${newStatus}. Email notification sent.`,
+      });
+    } catch (error) {
+      console.error("Error:", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to update reservation status.",
+      });
+    }
   };
 
   const getBadgeColor = (status: string) => {
