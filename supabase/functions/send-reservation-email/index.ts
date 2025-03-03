@@ -93,9 +93,22 @@ serve(async (req) => {
   }
 
   try {
+    console.log("Email function invoked");
+    
     const { type, reservation }: EmailRequest = await req.json();
+    console.log("Request data:", { type, reservation });
+    
+    // Check if we have a valid Resend API key
+    const apiKey = Deno.env.get("RESEND_API_KEY");
+    if (!apiKey) {
+      console.error("No RESEND_API_KEY found in environment variables");
+      throw new Error("RESEND_API_KEY not configured");
+    }
+    
     const { subject, html } = getEmailContent(type, reservation);
 
+    console.log("Sending email to:", reservation.email);
+    
     const { data, error } = await resend.emails.send({
       from: "Bokaap Deli <onboarding@resend.dev>", // Update this with your verified domain
       to: [reservation.email],
@@ -110,7 +123,7 @@ serve(async (req) => {
 
     console.log("Email sent successfully:", data);
 
-    return new Response(JSON.stringify({ success: true }), {
+    return new Response(JSON.stringify({ success: true, data }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
     });
