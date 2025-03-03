@@ -3,7 +3,6 @@
 # working directory name when running `supabase init`.
 project_id = "qejymfjqkwwlppzuojwb"
 
-# Config specific to the Deno Edge Functions implementation
 [functions]
 # The maximum size in bytes of the request body
-body_size_limit = 10485760 # 10MiB
+body_size_limit = { value = 10485760 }  # 10MiB
