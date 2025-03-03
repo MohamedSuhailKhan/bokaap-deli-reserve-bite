@@ -2,8 +2,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { Resend } from "npm:resend@2.0.0";
 
-const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
-
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
@@ -105,6 +103,9 @@ serve(async (req) => {
       throw new Error("RESEND_API_KEY not configured");
     }
     
+    console.log("API key exists, first 4 chars:", apiKey.substring(0, 4));
+    
+    const resend = new Resend(apiKey);
     const { subject, html } = getEmailContent(type, reservation);
 
     console.log("Sending email to:", reservation.email);
@@ -132,6 +133,7 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({
         error: error.message,
+        details: error.statusCode ? `Status code: ${error.statusCode}` : undefined,
       }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
