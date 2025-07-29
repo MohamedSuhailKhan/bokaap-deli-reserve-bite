@@ -1,104 +1,74 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
-type AdminUser = {
-  id: string;
-  username: string;
-  password_hash: string;
-  created_at: string | null;
-};
-
 const Auth = () => {
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const { toast } = useToast();
   const navigate = useNavigate();
+  const { toast } = useToast();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
+    setIsSubmitting(true);
 
-    try {
-      const { data, error } = await supabase
-        .from("admin_users")
-        .select()
-        .eq("username", username)
-        .maybeSingle<AdminUser>();
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
 
-      if (error) throw error;
-
-      if (data && data.password_hash === password) {
-        localStorage.setItem('isAdmin', 'true');
-        localStorage.setItem('adminUsername', username);
-        
-        toast({
-          title: "Login successful",
-          description: "Welcome back, admin!",
-        });
-        
-        navigate('/admin');
-      } else {
-        toast({
-          variant: "destructive",
-          title: "Invalid credentials",
-          description: "Please check your username and password.",
-        });
-      }
-    } catch (error) {
+    if (error) {
       toast({
         variant: "destructive",
-        title: "Error",
-        description: "An error occurred during login.",
+        title: "Login Failed",
+        description: error.message,
       });
-      console.error(error);
-    } finally {
-      setIsLoading(false);
+    } else {
+      toast({
+        title: "Login Successful",
+        description: "Welcome back!",
+      });
+      navigate("/admin");
     }
+
+    setIsSubmitting(false);
   };
 
   return (
-    <div className="container mx-auto px-4 py-20">
-      <div className="max-w-md mx-auto">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-2xl text-center">Admin Login</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="username">Username</Label>
-                <Input
-                  id="username"
-                  type="text"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                />
-              </div>
-              <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? "Logging in..." : "Login"}
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
+    <div className="container mx-auto flex items-center justify-center min-h-screen">
+      <div className="w-full max-w-md">
+        <form onSubmit={handleLogin} className="space-y-6 bg-white p-8 rounded-lg shadow-md">
+          <h1 className="text-2xl font-bold text-center">Admin Login</h1>
+          <div className="space-y-2">
+            <Label htmlFor="email">Email</Label>
+            <Input
+              id="email"
+              type="email"
+              placeholder="admin@example.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="password">Password</Label>
+            <Input
+              id="password"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+          </div>
+          <Button type="submit" className="w-full" disabled={isSubmitting}>
+            {isSubmitting ? "Signing in..." : "Sign In"}
+          </Button>
+        </form>
       </div>
     </div>
   );
