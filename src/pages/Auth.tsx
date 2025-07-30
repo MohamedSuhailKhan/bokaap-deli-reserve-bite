@@ -4,12 +4,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
 
 const Auth = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -17,26 +16,43 @@ const Auth = () => {
     e.preventDefault();
     setIsSubmitting(true);
 
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
+    try {
+      const response = await fetch("http://localhost:8000/token", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: new URLSearchParams({
+          username,
+          password,
+        }),
+      });
 
-    if (error) {
+      if (response.ok) {
+        const data = await response.json();
+        localStorage.setItem("token", data.access_token);
+        toast({
+          title: "Login Successful",
+          description: "Welcome back!",
+        });
+        navigate("/admin");
+      } else {
+        const errorData = await response.json();
+        toast({
+          variant: "destructive",
+          title: "Login Failed",
+          description: errorData.detail || "An error occurred",
+        });
+      }
+    } catch (error) {
       toast({
         variant: "destructive",
         title: "Login Failed",
-        description: error.message,
+        description: "An error occurred while trying to log in.",
       });
-    } else {
-      toast({
-        title: "Login Successful",
-        description: "Welcome back!",
-      });
-      navigate("/admin");
+    } finally {
+      setIsSubmitting(false);
     }
-
-    setIsSubmitting(false);
   };
 
   return (
@@ -45,13 +61,13 @@ const Auth = () => {
         <form onSubmit={handleLogin} className="space-y-6 bg-white p-8 rounded-lg shadow-md">
           <h1 className="text-2xl font-bold text-center">Admin Login</h1>
           <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="username">Username</Label>
             <Input
-              id="email"
-              type="email"
-              placeholder="admin@example.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              id="username"
+              type="text"
+              placeholder="admin"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
               required
             />
           </div>

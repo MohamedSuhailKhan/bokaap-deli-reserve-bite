@@ -1,7 +1,5 @@
-
 import { useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
 interface MenuItem {
@@ -23,22 +21,13 @@ const Menu = () => {
   useEffect(() => {
     const fetchMenuItems = async () => {
       try {
-        const { data, error } = await supabase
-          .from('menu_items')
-          .select('*')
-          .order('category');
-
-        if (error) {
-          throw error;
+        const response = await fetch("http://localhost:8000/menu");
+        if (response.ok) {
+          const data = await response.json();
+          setMenuItems(data);
+        } else {
+          throw new Error("Failed to fetch menu items");
         }
-
-        // Type assertion to ensure the data matches our MenuItem type
-        const typedData = (data || []).map(item => ({
-          ...item,
-          category: item.category as "starters" | "mains" | "desserts" | "drinks"
-        }));
-
-        setMenuItems(typedData);
       } catch (error) {
         console.error('Error fetching menu items:', error);
         toast({

@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -18,7 +17,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
 
 const availableTimes = [
   "17:00",
@@ -51,16 +49,21 @@ const Reservations = () => {
 
   useEffect(() => {
     const fetchMenuItems = async () => {
-      const { data, error } = await supabase.from("menu_items").select("*");
-      if (error) {
+      try {
+        const response = await fetch("http://localhost:8000/menu");
+        if (response.ok) {
+          const data = await response.json();
+          setMenuItems(data);
+        } else {
+          throw new Error("Failed to fetch menu items");
+        }
+      } catch (error) {
         console.error("Error fetching menu items:", error);
         toast({
           variant: "destructive",
           title: "Error",
           description: "Could not load the menu. Please try again later.",
         });
-      } else {
-        setMenuItems(data);
       }
     };
     fetchMenuItems();
@@ -98,89 +101,47 @@ const Reservations = () => {
     setIsSubmitting(true);
 
     try {
-      // Create the reservation
-      const { data: reservation, error: reservationError } = await supabase
-        .from("reservations")
-        .insert([
-          {
-            date: date.toISOString().split("T")[0],
-            time,
-            guests,
-            name,
-            email,
-            phone,
-            seating_area: seatingArea,
-            table_number: tableNumber,
-            status: "pending",
-          },
-        ])
-        .select()
-        .single();
-
-      if (reservationError) {
-        throw reservationError;
-      }
-
-      // If there are items in the cart, save them
-      if (cart.size > 0) {
-        const reservationItems = Array.from(cart.entries()).map(
+      const reservationData = {
+        date: date.toISOString().split("T")[0],
+        time,
+        guests,
+        name,
+        email,
+        phone,
+        table_number: tableNumber,
+        reservation_items: Array.from(cart.entries()).map(
           ([menu_item_id, quantity]) => ({
-            reservation_id: reservation.id,
             menu_item_id,
             quantity,
           })
-        );
+        ),
+      };
 
-        const { error: itemsError } = await supabase
-          .from("reservation_items")
-          .insert(reservationItems);
-
-        if (itemsError) {
-          // If this fails, we should ideally roll back the reservation,
-          // but for now, we'll just log the error and notify the user.
-          console.error("Error saving pre-order items:", itemsError);
-          toast({
-            variant: "destructive",
-            title: "Pre-order Failed",
-            description: "Your reservation was made, but we couldn't save your pre-order. Please contact us to confirm your order.",
-          });
-        }
-      }
-
-      try {
-        // Try to send email, but don't block the reservation if it fails
-        await supabase.functions.invoke("send-reservation-email", {
-          body: {
-            type: "new",
-            reservation: {
-              name,
-              email,
-              date: date.toISOString().split("T")[0],
-              time,
-              guests,
-              table_number: tableNumber,
-            },
-          },
-        });
-      } catch (emailError) {
-        console.error("Email sending failed:", emailError);
-        // Don't throw here, just log the error
-      }
-
-      toast({
-        title: "Reservation Submitted",
-        description: "Your reservation has been successfully submitted. We'll contact you shortly.",
+      const response = await fetch("http://localhost:8000/reservations", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(reservationData),
       });
 
-      // Reset form
-      setDate(undefined);
-      setTime(undefined);
-      setGuests(2);
-      setName("");
-      setEmail("");
-      setPhone("");
-      setTableNumber(undefined);
-      setCart(new Map());
+      if (response.ok) {
+        toast({
+          title: "Reservation Submitted",
+          description: "Your reservation has been successfully submitted. We'll contact you shortly.",
+        });
+        // Reset form
+        setDate(undefined);
+        setTime(undefined);
+        setGuests(2);
+        setName("");
+        setEmail("");
+        setPhone("");
+        setTableNumber(undefined);
+        setCart(new Map());
+      } else {
+        throw new Error("Failed to submit reservation");
+      }
     } catch (error) {
       console.error("Error:", error);
       toast({
@@ -247,7 +208,7 @@ const Reservations = () => {
             <div className="space-y-2">
               <Label>Select Table</Label>
               <Select
-                onValueChange={(value) => setTableNumber(Number(value))}
+                onValuechange={(value) => setTableNumber(Number(value))}
                 value={tableNumber?.toString()}
               >
                 <SelectTrigger>
