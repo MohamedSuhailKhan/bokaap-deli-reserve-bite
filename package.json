@@ -3,6 +3,7 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "homepage": "https://mohamedsuhailkhan.github.io/bokaap-deli-reserve-bite/"
   "scripts": {
     "dev": "vite",
     "build": "vite build",
@@ -62,6 +63,8 @@
     "tailwindcss-animate": "^1.0.7",
     "vaul": "^0.9.3",
     "zod": "^3.23.8"
+    "predeploy": "npm run build",
+    "deploy": "gh-pages -d dist"
   },
   "devDependencies": {
     "@eslint/js": "^9.9.0",
@@ -81,5 +84,6 @@
     "typescript": "^5.5.3",
     "typescript-eslint": "^8.0.1",
     "vite": "^5.4.1"
+    "gh-pages": "^3.2.3"
   }
 }
