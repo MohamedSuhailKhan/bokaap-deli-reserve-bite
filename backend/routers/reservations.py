@@ -3,7 +3,7 @@ from ..database import db
 from ..models import Reservation, AdminUser
 from typing import List
 from ..auth import get_current_user
-from .. import email
+from .. import email_sender as email
 from bson import ObjectId
 
 router = APIRouter()
